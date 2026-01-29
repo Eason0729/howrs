@@ -1,0 +1,11 @@
+# Add these files to .gitignore for packaging artifacts
+
+# SELinux policy build artifacts
+packaging/*.mod
+packaging/*.pp
+
+# RPM build artifacts
+*.rpm
+*.src.rpm
+
+ /tmp

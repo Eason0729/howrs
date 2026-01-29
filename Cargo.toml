@@ -1,0 +1,76 @@
+[workspace]
+members = [".", "howrs-vision"]
+resolver = "2"
+
+[profile.release]
+opt-level = "z"
+lto = true
+
+[workspace.package]
+edition = "2021"
+version = "0.1.0"
+authors = ["howrs"]
+license = "Apache-2.0"
+
+[workspace.dependencies]
+anyhow = "1"
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+serde_json = "1"
+clap = { version = "4", features = ["derive"] }
+once_cell = "1"
+directories = "5"
+image = "0.25"
+ort = { version = "2.0.0-rc.11", default-features = false, features = [
+    "std",
+    "ndarray",
+    "download-binaries",
+    "copy-dylibs",
+    "tls-native",
+] }
+v4l = "0.14"
+rand = "0.8"
+uuid = { version = "1", features = ["v4", "serde"] }
+bytemuck = "1"
+serde_bytes = "0.11"
+log = "0.4"
+env_logger = "0.11"
+libc = "0.2"
+ndarray = { version = "0.17", features = ["serde"] }
+postcard = { version = "1", features = ["alloc"] }
+
+[package]
+name = "howrs"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
+[[bin]]
+name = "howrs"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+serde.workspace = true
+toml.workspace = true
+once_cell.workspace = true
+directories.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+log.workspace = true
+env_logger.workspace = true
+libc.workspace = true
+image.workspace = true
+ndarray.workspace = true
+postcard.workspace = true
+howrs-vision = { path = "./howrs-vision" }
+
+[features]
+default = ["openvino"]
+cuda = ["howrs-vision/cuda"]
+openvino = ["howrs-vision/openvino"]
+pkg-config = ["howrs-vision/pkg-config"]

@@ -1,0 +1,12 @@
+# Howrs Face Recognition Configuration
+# Located at /usr/local/etc/howrs/config.toml
+
+# Similarity threshold for authentication (0.0 - 1.0)
+# Higher = stricter matching, more secure but may reject valid users
+# Lower = more lenient, easier to authenticate but less secure
+# Recommended range: 0.6 - 0.7
+threshold = 0.6
+
+# Camera device path
+# Use "v4l2-ctl --list-devices" to find available cameras
+camera = "/dev/video0"

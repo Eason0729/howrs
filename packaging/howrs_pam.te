@@ -1,0 +1,83 @@
+policy_module(howrs_pam, 1.0.0)
+
+########################################
+# Declarations
+########################################
+
+type howrs_pam_t;
+type howrs_pam_exec_t;
+application_domain(howrs_pam_t, howrs_pam_exec_t)
+
+type howrs_data_t;
+files_type(howrs_data_t)
+
+########################################
+# PAM module policy
+########################################
+
+# Allow reading PAM configuration
+auth_use_pam(howrs_pam_t)
+
+# Allow the howrs PAM module to run in PAM context
+corecmd_exec_bin(howrs_pam_t)
+corecmd_exec_shell(howrs_pam_t)
+
+# Allow access to /usr/sbin/howrs
+can_exec(howrs_pam_t, howrs_pam_exec_t)
+
+########################################
+# Camera access
+########################################
+
+# Allow access to V4L2 video devices for camera
+dev_read_video_dev(howrs_pam_t)
+dev_write_video_dev(howrs_pam_t)
+
+# Additional device access
+dev_read_sysfs(howrs_pam_t)
+dev_read_urand(howrs_pam_t)
+dev_read_rand(howrs_pam_t)
+fs_getattr_tmpfs(howrs_pam_t)
+
+########################################
+# Face data storage access
+########################################
+
+# Allow reading and writing face data
+allow howrs_pam_t howrs_data_t:dir { create read getattr setattr open search add_name remove_name write };
+allow howrs_pam_t howrs_data_t:file { create read write getattr setattr open append unlink };
+
+# Allow reading configuration
+files_read_etc_files(howrs_pam_t)
+read_files_pattern(howrs_pam_t, howrs_data_t, howrs_data_t)
+write_files_pattern(howrs_pam_t, howrs_data_t, howrs_data_t)
+
+########################################
+# System operations
+########################################
+
+# Allow reading user information
+auth_read_passwd(howrs_pam_t)
+auth_use_nsswitch(howrs_pam_t)
+
+# Allow basic operations
+kernel_read_system_state(howrs_pam_t)
+kernel_read_kernel_sysctls(howrs_pam_t)
+
+# Allow logging
+logging_send_syslog_msg(howrs_pam_t)
+
+# Allow network for ONNX Runtime model loading
+sysnet_read_config(howrs_pam_t)
+corenet_tcp_connect_http_port(howrs_pam_t)
+
+# Allow memory operations
+allow howrs_pam_t self:process { getsched setsched execmem };
+allow howrs_pam_t self:capability { dac_override dac_read_search setuid setgid };
+
+# Allow shared library loading
+libs_use_ld_so(howrs_pam_t)
+libs_use_shared_libs(howrs_pam_t)
+
+# Allow miscellaneous files
+miscfiles_read_localization(howrs_pam_t)

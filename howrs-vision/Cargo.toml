@@ -1,0 +1,30 @@
+[package]
+name = "howrs-vision"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+# Enable nightly features for SIMD optimization
+
+[dependencies]
+anyhow.workspace = true
+image.workspace = true
+ndarray.workspace = true
+ort = { version = "2.0.0-rc.11", default-features = false, features = [
+    "std",
+    "ndarray",
+    "download-binaries",
+    "copy-dylibs",
+    "tls-native",
+] }
+v4l.workspace = true
+log.workspace = true
+
+[dev-dependencies]
+env_logger.workspace = true
+
+[features]
+default = []
+openvino = ["ort/openvino"]
+cuda = ["ort/cuda"]
+pkg-config = ["ort/pkg-config"]

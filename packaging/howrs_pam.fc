@@ -1,0 +1,10 @@
+# File contexts for howrs PAM module
+
+# PAM module library
+/lib.*/security/libhowrs\.so    --  gen_context(system_u:object_r:lib_t,s0)
+
+# Main binary
+/usr/sbin/howrs                 --  gen_context(system_u:object_r:howrs_pam_exec_t,s0)
+
+# Data and configuration directory
+/usr/local/etc/howrs(/.*)?          gen_context(system_u:object_r:howrs_data_t,s0)
