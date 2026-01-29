@@ -3,7 +3,7 @@ Version:        0.1.0
 Release:        1%{?dist}
 Summary:        High-performance facial recognition authentication system for Linux
 License:        Apache-2.0
-URL:            https://github.com/yourorg/howrs
+URL:            https://github.com/Eason0729/howrs
 Source0:        %{name}-%{version}.tar.gz
 
 # Disable debuginfo package since we're using pre-built binaries
@@ -109,7 +109,7 @@ WARNING: Test PAM configuration carefully! Keep a root shell open when
          testing to avoid being locked out.
 
 For more information, see the documentation at:
-  https://github.com/yourorg/howrs
+  https://github.com/Eason0729/howrs
 
 ================================================================================
 

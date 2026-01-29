@@ -32,6 +32,8 @@ pub extern "C" fn pam_sm_authenticate(
         Err(_) => return PAM_USER_UNKNOWN,
     };
 
+    eprintln!("Running facial recognition...");
+
     // Run authentication
     match run_auth(&username) {
         Ok(true) => PAM_SUCCESS,
@@ -82,7 +84,7 @@ fn run_auth(username: &str) -> Result<bool> {
 
     // Try to get a good face embedding (retry a few times)
     let mut best_embedding = None;
-    for _ in 0..10 {
+    for _ in 0..24 {
         if let Ok(frame_buf) = camera.frame() {
             let img = image::DynamicImage::ImageRgb8(frame_buf);
             // Use lower thresholds for faster processing in PAM context
