@@ -44,8 +44,8 @@ install -D -m 755 target/release/libhowrs.so %{buildroot}/%{_lib}/security/libho
 # Install default configuration
 install -D -m 644 packaging/config.toml %{buildroot}/usr/local/etc/howrs/config.toml
 
-# Create face storage directory
-install -d -m 700 %{buildroot}/usr/local/etc/howrs
+# Create face storage directory (readable by all users, but only root can write)
+install -d -m 755 %{buildroot}/usr/local/etc/howrs
 
 # Install SELinux policy (if it exists and is not empty)
 if [ -s packaging/howrs_pam.pp ]; then
@@ -69,6 +69,14 @@ if [ $1 -eq 1 ] ; then
         echo "Note: SELinux policy module not included in this build."
         echo "      You may need to configure SELinux manually for camera access."
     fi
+fi
+
+# Set permissions for existing face data to be readable by all users
+# This allows SDDM and other non-root display managers to read face data
+if [ -d /usr/local/etc/howrs ]; then
+    chmod 755 /usr/local/etc/howrs
+    find /usr/local/etc/howrs -type d -exec chmod 755 {} \; 2>/dev/null || :
+    find /usr/local/etc/howrs -type f -exec chmod 644 {} \; 2>/dev/null || :
 fi
 
 cat <<EOF
