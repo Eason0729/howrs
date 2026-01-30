@@ -8,4 +8,4 @@ packaging/*.pp
 *.rpm
 *.src.rpm
 
- /tmp
+/tmp

@@ -3,12 +3,12 @@ Version:        0.1.0
 Release:        1%{?dist}
 Summary:        High-performance facial recognition authentication system for Linux
 License:        Apache-2.0
-URL:            https://github.com/Eason0729/howrs
-Source0:        %{name}-%{version}.tar.gz
+URL:            https://github.com/Eason0729/howrs/
+Source0:        https://github.com/Eason0729/howrs/
 
-# Disable debuginfo package since we're using pre-built binaries
-%global debug_package %{nil}
-
+BuildRequires:  rust >= 1.70
+BuildRequires:  cargo
+BuildRequires:  clang-devel
 BuildRequires:  systemd-rpm-macros
 
 Requires:       pam
@@ -20,19 +20,36 @@ Rust, designed as a modern alternative to Howdy. It provides fast and secure
 face-based authentication for Linux systems with PAM integration.
 
 Features:
-- Blazing fast with SIMD optimizations
-- State-of-the-art YuNet face detection and SFace recognition
-- Hardware acceleration support (OpenVINO, CUDA, etc.)
-- Efficient binary storage format
-- PAM integration for system authentication
+- Secure: Uses state-of-the-art YuNet face detection and SFace recognition models
+- PAM Integration: Drop-in replacement for password authentication
+- Hardware Acceleration: Supports multiple device(onnx), including NPU/GPU/CPU
+- Blazing Fast: Optimized with SIMD instructions for post-processing
+
+This package includes pre-downloaded ONNX models for offline building.
 
 %prep
 %autosetup
 
+# Verify ONNX models are included in the source tarball
+if [ ! -f howrs-vision/models/face_detection_yunet_2023mar.onnx ] || \
+   [ ! -f howrs-vision/models/face_recognition_sface_2021dec.onnx ]; then
+    echo "Error: ONNX models not found in source tarball"
+    echo "Please run packaging/build-srpm-fedpkg.sh to generate a proper source tarball"
+    exit 1
+fi
+
 %build
-# Binaries are pre-built and included in the source tarball
-# This allows packaging without requiring rust/cargo at build time
-echo "Using pre-built binaries from target/release/"
+
+# Only use x86-64-v2 and AVX2 on x86_64 architecture
+%ifarch x86_64
+export RUSTFLAGS="-C target-cpu=x86-64-v2 -C target-feature=+avx2"
+%endif
+
+# Compile CLI
+cargo build --bin --release --features openvino
+
+# Compile PAM module
+cargo build --lib --release --features openvino
 
 %install
 # Install binary
@@ -57,71 +74,20 @@ fi
 if [ $1 -eq 1 ] ; then
     if [ -f %{_datadir}/selinux/packages/%{name}/howrs_pam.pp ]; then
         if command -v semodule > /dev/null 2>&1 && selinuxenabled 2>/dev/null; then
-            echo "Installing SELinux policy module for howrs PAM integration..."
             semodule -i %{_datadir}/selinux/packages/%{name}/howrs_pam.pp 2>/dev/null || :
-            # Restore file contexts
             restorecon -R %{_lib}/security/libhowrs.so 2>/dev/null || :
             restorecon -R %{_sbindir}/howrs 2>/dev/null || :
             restorecon -R /usr/local/etc/howrs 2>/dev/null || :
-            echo "SELinux policy installed. Face data storage and camera access should work correctly."
         fi
-    else
-        echo "Note: SELinux policy module not included in this build."
-        echo "      You may need to configure SELinux manually for camera access."
     fi
 fi
 
-# Set permissions for existing face data to be readable by all users
-# This allows SDDM and other non-root display managers to read face data
+# Set permissions for face data directory
 if [ -d /usr/local/etc/howrs ]; then
     chmod 755 /usr/local/etc/howrs
     find /usr/local/etc/howrs -type d -exec chmod 755 {} \; 2>/dev/null || :
     find /usr/local/etc/howrs -type f -exec chmod 644 {} \; 2>/dev/null || :
 fi
-
-cat <<EOF
-
-================================================================================
-HOWRS INSTALLATION COMPLETE
-================================================================================
-
-The howrs facial recognition system has been installed:
-
-  Binary:      %{_sbindir}/howrs
-  PAM module:  %{_lib}/security/libhowrs.so
-  Config:      /usr/local/etc/howrs/config.toml
-
-SELinux policy has been installed for PAM integration.
-
-NEXT STEPS:
-
-1. Enroll your face:
-   $ sudo howrs enroll --user \$USER
-
-2. Test authentication:
-   $ sudo howrs test --user \$USER
-
-3. Enable PAM authentication (MANUAL STEP):
-   Edit /etc/pam.d/sudo or /etc/pam.d/system-auth and add:
-
-   auth sufficient libhowrs.so
-
-   Place this line BEFORE other auth methods for best experience.
-
-4. Add your user to the video group for camera access:
-   $ sudo usermod -a -G video \$USER
-
-   Then logout and login again.
-
-WARNING: Test PAM configuration carefully! Keep a root shell open when
-         testing to avoid being locked out.
-
-For more information, see the documentation at:
-  https://github.com/Eason0729/howrs
-
-================================================================================
-
-EOF
 
 %postun
 # Remove SELinux policy module on uninstall (if it was installed)
@@ -144,7 +110,6 @@ fi
 %{_datadir}/selinux/packages/%{name}/howrs_pam.pp
 
 %changelog
-* Thu Jan 30 2025 Howrs Team <team@howrs.example> - 0.1.0-1
+* Thu Jan 30 2025 Eason <30045503+Eason0729@users.noreply.github.com> - 0.1.0
 - Initial RPM package
 - SELinux policy support for PAM integration
-- OpenVINO execution provider by default
