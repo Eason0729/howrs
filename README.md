@@ -87,6 +87,7 @@ sudo mkdir -p /usr/local/etc/howrs
 cat <<EOF | sudo tee /usr/local/etc/howrs/config.toml
 threshold = 0.6
 camera = "/dev/video0"
+scan_durnation = 5
 EOF
 ```
 
@@ -168,6 +169,9 @@ threshold = 0.6
 
 # Camera device path
 camera = "/dev/video0"
+
+# How long the scan take
+scan_durnation = 5
 ```
 
 ## Troubleshooting

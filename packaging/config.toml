@@ -10,3 +10,5 @@ threshold = 0.6
 # Camera device path
 # Use "v4l2-ctl --list-devices" to find available cameras
 camera = "/dev/video0"
+
+scan_durnation = 5

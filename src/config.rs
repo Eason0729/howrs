@@ -15,6 +15,7 @@ pub static FACE_STORE_PREFIX: Lazy<&'static Path> = Lazy::new(|| {
 pub struct Config {
     pub threshold: f32,
     pub camera: String,
+    pub scan_durnation: u32,
 }
 
 impl Default for Config {
@@ -22,6 +23,7 @@ impl Default for Config {
         Self {
             threshold: 0.6,
             camera: "/dev/video0".to_string(),
+            scan_durnation: 5,
         }
     }
 }

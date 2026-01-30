@@ -1,4 +1,7 @@
-use std::env;
+use std::{
+    env,
+    time::{Duration, Instant},
+};
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
@@ -170,17 +173,17 @@ fn test(cfg: &config::Config, user_id: &str) -> Result<()> {
 
     info!("Camera opened. Capturing frames...");
 
-    // Try multiple frames
-    let max_attempts = 30;
+    let start_time = Instant::now();
+    let scan_duration = Duration::from_secs(cfg.scan_durnation as u64);
 
-    for i in 0..max_attempts {
+    while start_time.elapsed() < scan_duration {
         let frame = camera.frame().context("Failed to capture frame")?;
 
         let img = image::DynamicImage::ImageRgb8(frame);
 
         match pipeline.extract_embedding(&img, cfg.threshold, 0.3) {
             Ok(probe_embedding) => {
-                info!("Frame {}: Face detected", i + 1);
+                info!("Face detected");
 
                 // Match against stored faces
                 let best_score = matcher::best_score(&records, &probe_embedding);
@@ -198,7 +201,7 @@ fn test(cfg: &config::Config, user_id: &str) -> Result<()> {
                 }
             }
             Err(e) => {
-                warn!("Frame {}: {}", i + 1, e);
+                warn!("{}", e);
             }
         }
 

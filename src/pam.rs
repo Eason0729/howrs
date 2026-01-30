@@ -1,6 +1,7 @@
 use anyhow::Result;
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_int, c_void};
+use std::time::{Duration, Instant};
 
 // PAM return codes
 const PAM_SUCCESS: c_int = 0;
@@ -65,42 +66,35 @@ fn get_pam_user(pamh: *mut PamHandle) -> Result<String> {
 }
 
 fn run_auth(username: &str) -> Result<bool> {
-    // Load config
     let config = crate::config::load_config(None)?;
 
-    // Load stored face records for this user
     let records = crate::storage::load_records(username)?;
     if records.is_empty() {
-        // No enrolled faces - reject
         return Ok(false);
     }
 
-    // Initialize pipeline
     let mut pipeline = crate::Pipeline::new()?;
 
-    // Capture from camera
     use howrs_vision::Camera;
     let mut camera = Camera::open(&config.camera)?;
 
-    // Try to get a good face embedding (retry a few times)
-    let mut best_embedding = None;
-    for _ in 0..24 {
+    let start_time = Instant::now();
+    let scan_duration = Duration::from_secs(config.scan_durnation as u64);
+
+    while start_time.elapsed() < scan_duration {
         if let Ok(frame_buf) = camera.frame() {
             let img = image::DynamicImage::ImageRgb8(frame_buf);
             // Use lower thresholds for faster processing in PAM context
             if let Ok(embedding) = pipeline.extract_embedding(&img, 0.5, 0.3) {
-                best_embedding = Some(embedding);
-                break;
+                let score = crate::matcher::best_score(&records, &embedding)
+                    .ok_or_else(|| anyhow::anyhow!("No match found"))?;
+
+                if score >= config.threshold {
+                    return Ok(true);
+                }
             }
         }
     }
 
-    let embedding = best_embedding.ok_or_else(|| anyhow::anyhow!("No face detected"))?;
-
-    // Match against stored records
-    let score = crate::matcher::best_score(&records, &embedding)
-        .ok_or_else(|| anyhow::anyhow!("No match found"))?;
-
-    // Check if score meets threshold
-    Ok(score >= config.threshold)
+    Ok(false)
 }
