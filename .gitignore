@@ -5,3 +5,4 @@ rpmbuild
 /howrs-0.1.0.tar.gz
 *.src.rpm
 /fedpkg
+*.log

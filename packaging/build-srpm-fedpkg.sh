@@ -64,27 +64,15 @@ cd "$PROJECT_ROOT"
 echo ""
 echo "Step 3: Creating source tarball..."
 TARBALL_NAME="${PROJECT_NAME}-${VERSION}.tar.gz"
-TEMP_DIR=$(mktemp -d)
-SOURCE_DIR="$TEMP_DIR/${PROJECT_NAME}-${VERSION}"
+FILE_LIST="$SCRIPT_DIR/tmp/filelist.txt"
 
-# Copy project files to temporary directory
-mkdir -p "$SOURCE_DIR"
-rsync -a --exclude='.git' \
-         --exclude='target' \
-         --exclude='*.swp' \
-         --exclude='*~' \
-         --exclude='.gitignore' \
-         --exclude='rpmbuild' \
-         "$PROJECT_ROOT/" "$SOURCE_DIR/"
+git ls-files > "$FILE_LIST"
+echo "howrs-vision/models/face_detection_yunet_2023mar.onnx" >> "$FILE_LIST"
+echo "howrs-vision/models/face_recognition_sface_2021dec.onnx" >> "$FILE_LIST"
 
 # Create tarball
-cd "$TEMP_DIR"
-tar czf "$TARBALL_NAME" "${PROJECT_NAME}-${VERSION}"
-mv "$TARBALL_NAME" "$PROJECT_ROOT/"
 cd "$PROJECT_ROOT"
-
-# Clean up temp directory
-rm -rf "$TEMP_DIR"
+tar -czvf "$TARBALL_NAME" -T "$FILE_LIST"
 
 echo "Created source tarball: $TARBALL_NAME"
 
@@ -119,7 +107,7 @@ if [ -n "$SRPM_FILE" ]; then
     # Copy SRPM to project root for easy access
     cp "$SRPM_FILE" "$PROJECT_ROOT/"
     SRPM_NAME=$(basename "$SRPM_FILE")
-    
+
     echo ""
     echo "=== Success! ==="
     echo "Source RPM created: $PROJECT_ROOT/$SRPM_NAME"
