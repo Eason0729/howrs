@@ -5,6 +5,7 @@ Summary:        High-performance facial recognition authentication system for Li
 License:        Apache-2.0
 URL:            https://github.com/Eason0729/howrs/
 Source0:        https://github.com/Eason0729/howrs/
+%global debug_package %{nil}
 
 BuildRequires:  rust >= 1.70
 BuildRequires:  cargo
