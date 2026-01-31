@@ -66,13 +66,14 @@ echo "Step 3: Creating source tarball..."
 TARBALL_NAME="${PROJECT_NAME}-${VERSION}.tar.gz"
 FILE_LIST="$SCRIPT_DIR/tmp/filelist.txt"
 
+# use file list to exclude gitignored file, but include onnx model(so the srpm can be built offline)
 git ls-files > "$FILE_LIST"
 echo "howrs-vision/models/face_detection_yunet_2023mar.onnx" >> "$FILE_LIST"
 echo "howrs-vision/models/face_recognition_sface_2021dec.onnx" >> "$FILE_LIST"
 
 # Create tarball
 cd "$PROJECT_ROOT"
-tar -czvf "$TARBALL_NAME" -T "$FILE_LIST"
+tar -czvf "$TARBALL_NAME" --transform "s,^,${PROJECT_NAME}-${VERSION}/," -T "$FILE_LIST"
 
 echo "Created source tarball: $TARBALL_NAME"
 
@@ -96,10 +97,12 @@ cp "$PROJECT_ROOT/$TARBALL_NAME" .
 # Create sources file for fedpkg
 echo "SHA512 (${TARBALL_NAME}) = $(sha512sum ${TARBALL_NAME} | awk '{print $1}')" > sources
 
+FEDORA_VERSION=$(grep "VERSION_ID" /etc/os-release | cut -d'=' -f2 | tr -d '"')
+
 # Build source RPM using fedpkg
 echo ""
 echo "Step 5: Building source RPM with fedpkg..."
-fedpkg --release f40 srpm
+fedpkg --release "f$FEDORA_VERSION" srpm
 
 # Find and report the built SRPM
 SRPM_FILE=$(find . -name "*.src.rpm" | head -n 1)
@@ -116,7 +119,7 @@ if [ -n "$SRPM_FILE" ]; then
     echo "  rpmbuild --rebuild $SRPM_NAME"
     echo ""
     echo "Or use mock for a clean build:"
-    echo "  mock -r fedora-40-x86_64 $SRPM_NAME"
+    echo "  mock -r fedora-$FEDORA_VERSION-x86_64 $SRPM_NAME"
     echo ""
     echo "The SRPM includes:"
     echo "  - Source code"

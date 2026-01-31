@@ -46,7 +46,7 @@ export RUSTFLAGS="-C target-cpu=x86-64-v2 -C target-feature=+avx2"
 %endif
 
 # Compile CLI
-cargo build --bin --release --features openvino
+cargo build --bin howrs --release --features openvino
 
 # Compile PAM module
 cargo build --lib --release --features openvino
