@@ -8,6 +8,7 @@ Source0:        https://github.com/Eason0729/howrs/
 
 BuildRequires:  rust >= 1.70
 BuildRequires:  cargo
+BuildRequires:  openssl-devel
 BuildRequires:  clang-devel
 BuildRequires:  systemd-rpm-macros
 
