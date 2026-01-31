@@ -1,0 +1,42 @@
+# Cargo build configuration for LLVM auto-vectorization optimization
+
+# Global optimization settings for better auto-vectorization
+[build]
+# Reduce codegen-units for better optimization across translation units
+# This allows LLVM to perform more aggressive optimizations including vectorization
+# Note: This increases build time but improves runtime performance
+
+[profile.release]
+# Already set in Cargo.toml, but ensure these are active:
+# opt-level = "z" or "3" for maximum optimization
+# lto = true for link-time optimization
+# These settings enable LLVM's auto-vectorizer to work effectively
+
+# Architecture-specific compiler flags for auto-vectorization
+# These target features enable SIMD instruction sets that LLVM can use
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+    "-C", "target-cpu=x86-64-v2",    # x86-64-v2 baseline (SSE4.2, POPCNT, etc.)
+    "-C", "target-feature=+avx2",     # Enable AVX2 for 256-bit vectors
+    "-C", "target-feature=+fma",      # Enable FMA instructions
+]
+
+[target.aarch64-unknown-linux-gnu]
+rustflags = [
+    "-C", "target-cpu=generic",       # Generic aarch64 with NEON (always available)
+    "-C", "target-feature=+neon",     # Ensure NEON is enabled for 128-bit vectors
+]
+
+[target.riscv64gc-unknown-linux-gnu]
+rustflags = [
+    "-C", "target-cpu=generic",       # Generic RISC-V 64-bit with extensions
+    # RISC-V vector extension (V) support depends on hardware
+    # Fedora's stable toolchain may not support unstable RVV yet
+    # Rely on scalar optimizations and future vector extensions
+]
+
+# Alternative: for local builds that should use native CPU features
+# Uncomment this section if building for the same machine you're running on
+# [build]
+# rustflags = ["-C", "target-cpu=native"]

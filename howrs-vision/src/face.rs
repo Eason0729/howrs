@@ -3,7 +3,6 @@ use anyhow::Result;
 use image::{DynamicImage, GenericImageView};
 use ndarray::{Array2, Array4};
 use ort::{session::Session, value::Value};
-use std::simd::{f32x8, num::SimdFloat};
 
 /// Detection result from YuNet
 #[derive(Debug, Clone)]
@@ -296,25 +295,20 @@ pub fn align_face(img: &DynamicImage, detection: &Detection, size: u32) -> Resul
                 let p01 = img.get_pixel(x0, y1);
                 let p11 = img.get_pixel(x1, y1);
 
-                // SIMD-optimized bilinear interpolation for RGB channels
+                // Bilinear interpolation optimized for LLVM auto-vectorization
                 let w00 = (1.0 - fx) * (1.0 - fy);
                 let w10 = fx * (1.0 - fy);
                 let w01 = (1.0 - fx) * fy;
                 let w11 = fx * fy;
                 
-                // Pack pixel values into SIMD vectors (R, G, B, padding)
-                let v00 = f32x8::from_array([p00[0] as f32, p00[1] as f32, p00[2] as f32, 0.0, 0.0, 0.0, 0.0, 0.0]);
-                let v10 = f32x8::from_array([p10[0] as f32, p10[1] as f32, p10[2] as f32, 0.0, 0.0, 0.0, 0.0, 0.0]);
-                let v01 = f32x8::from_array([p01[0] as f32, p01[1] as f32, p01[2] as f32, 0.0, 0.0, 0.0, 0.0, 0.0]);
-                let v11 = f32x8::from_array([p11[0] as f32, p11[1] as f32, p11[2] as f32, 0.0, 0.0, 0.0, 0.0, 0.0]);
-                
-                let result = v00 * f32x8::splat(w00) + v10 * f32x8::splat(w10) 
-                           + v01 * f32x8::splat(w01) + v11 * f32x8::splat(w11);
-                
-                let result_arr = result.to_array();
-                let r = result_arr[0] as u8;
-                let g = result_arr[1] as u8;
-                let b_val = result_arr[2] as u8;
+                // Compute interpolation for each RGB channel
+                // Using simple arithmetic allows LLVM to auto-vectorize
+                let r = (p00[0] as f32 * w00 + p10[0] as f32 * w10 
+                       + p01[0] as f32 * w01 + p11[0] as f32 * w11) as u8;
+                let g = (p00[1] as f32 * w00 + p10[1] as f32 * w10 
+                       + p01[1] as f32 * w01 + p11[1] as f32 * w11) as u8;
+                let b_val = (p00[2] as f32 * w00 + p10[2] as f32 * w10 
+                           + p01[2] as f32 * w01 + p11[2] as f32 * w11) as u8;
 
                 output.put_pixel(out_x, out_y, image::Rgb([r, g, b_val]));
             }
@@ -386,28 +380,20 @@ pub fn encode_face(session: &mut Session, face_img: &DynamicImage) -> Result<Emb
 
 /// Compute cosine similarity between two embeddings
 pub fn match_embedding(a: &Embedding, b: &Embedding) -> f32 {
-    // SIMD-optimized dot product for cosine similarity
+    // Optimized dot product for cosine similarity with LLVM auto-vectorization
     // Embeddings are already L2-normalized, so dot product = cosine similarity
     let a_data = a.vector.as_slice().unwrap();
     let b_data = b.vector.as_slice().unwrap();
     
     let len = a_data.len().min(b_data.len());
-    let mut dot = 0.0f32;
     
-    // Process 8 elements at a time with SIMD
-    let chunks = len / 8;
-    
-    for i in 0..chunks {
-        let offset = i * 8;
-        let va = f32x8::from_slice(&a_data[offset..offset + 8]);
-        let vb = f32x8::from_slice(&b_data[offset..offset + 8]);
-        dot += (va * vb).reduce_sum();
-    }
-    
-    // Handle remaining elements
-    for i in (chunks * 8)..len {
-        dot += a_data[i] * b_data[i];
-    }
+    // Simple loop that LLVM can auto-vectorize
+    // Using iterator zip and sum is optimal for auto-vectorization
+    let dot: f32 = a_data.iter()
+        .zip(b_data.iter())
+        .take(len)
+        .map(|(x, y)| x * y)
+        .sum();
     
     dot.max(-1.0).min(1.0)
 }

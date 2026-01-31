@@ -1,5 +1,3 @@
-#![feature(portable_simd)]
-
 pub mod face;
 pub mod model;
 pub mod pipeline;
