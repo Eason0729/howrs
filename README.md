@@ -42,15 +42,39 @@ The following execution providers can be enabled via Cargo features:
 
 ## Compilation
 
+### Download Models
+
+Before building, you must download the ONNX models:
+
+```bash
+bash howrs-vision/models/download_models.sh
+```
+
+This downloads:
+- `face_detection_yunet_2023mar.onnx` - YuNet face detector
+- `face_recognition_sface_2021dec.onnx` - SFace recognition model
+
 ### Standard Build
+
+> [!IMPORTANT]
+> On x86_64 architecture, you must set RUSTFLAGS for SIMD optimization:
+> ```bash
+> export RUSTFLAGS="-C target-cpu=x86-64-v2 -C target-feature=+avx2"
+> ```
 
 ```bash
 # Clone the repository
 git clone <repository-url>
 cd howrs
 
-# Build in release mode (recommended)
-cargo build --release
+# Download models first
+bash howrs-vision/models/download_models.sh
+
+# Build CLI binary
+cargo build --bin howrs --release
+
+# Build PAM library (cdylib)
+cargo build --lib --release
 
 # The binaries will be in target/release/
 ```
@@ -58,21 +82,36 @@ cargo build --release
 ### Build with Specific Execution Provider
 
 > [!TIP]
-> All build will fallback to CPU if runtime library isn't installed
+> All builds will fallback to CPU if runtime library isn't installed
 
 ```bash
 # For NVIDIA GPU acceleration
-cargo build --release --features cuda
+cargo build --bin howrs --release --features cuda
+cargo build --lib --release --features cuda
 
 # For Intel OpenVINO (default)
-cargo build --release --features openvino
+cargo build --bin howrs --release --features openvino
+cargo build --lib --release --features openvino
+```
+
+### Build Environment Variables
+
+- `HOWRS_CONFIG_PATH` - Path to config file (default: `/usr/local/etc/howrs/config.toml`)
+- `HOWRS_FACE_STORE_PREFIX` - Path for face data storage (default: `/usr/local/etc/howrs`)
+
+These are embedded at compile time via `option_env!`:
+
+```bash
+HOWRS_CONFIG_PATH=/etc/howrs/config.toml HOWRS_FACE_STORE_PREFIX=/etc/howrs cargo build --bin howrs --release
 ```
 
 ## Installation
 
 ```bash
-# Build the project
-cargo build --release
+# Build the project (see Compilation section)
+# Make sure to build both the binary and library:
+#   cargo build --bin howrs --release
+#   cargo build --lib --release
 
 # Install the binary
 sudo install -m 755 target/release/howrs /usr/local/bin/
