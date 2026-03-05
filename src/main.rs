@@ -18,10 +18,7 @@ pub use howrs_vision::{face, pipeline, video, Detection, Embedding, Pipeline};
 
 #[derive(Parser)]
 #[command(name = "howrs")]
-#[command(
-    version,
-    about = "Rust howdy clone - facial recognition authentication"
-)]
+#[command(version, about = "Howrs - modern facial recognition authentication")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,

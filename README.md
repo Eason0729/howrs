@@ -25,7 +25,7 @@ It store data in following location:
 
 ```
 howrs --help
-Rust howdy clone - facial recognition authentication
+Howrs - modern facial recognition authentication
 
 Usage: howrs <COMMAND>
 
