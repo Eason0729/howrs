@@ -5,9 +5,16 @@ use std::{
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use howrs::{config, identity, matcher, storage, Embedding, Pipeline};
 use howrs_vision::video::Camera;
 use log::{info, warn};
+
+pub mod config;
+pub mod identity;
+pub mod matcher;
+pub mod pam;
+pub mod storage;
+
+pub use howrs_vision::{face, pipeline, video, Detection, Embedding, Pipeline};
 
 #[derive(Parser)]
 #[command(name = "howrs")]
@@ -90,7 +97,7 @@ fn enroll(cfg: &config::Config, user_id: &str) -> Result<()> {
 
     // Capture multiple frames and try to get a good face
     let max_attempts = 30;
-    let mut best_detection: Option<howrs::Detection> = None;
+    let mut best_detection: Option<Detection> = None;
     let mut best_embedding: Option<Embedding> = None;
 
     for i in 0..max_attempts {

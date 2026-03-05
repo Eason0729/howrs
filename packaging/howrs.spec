@@ -50,15 +50,13 @@ export RUSTFLAGS="-C target-cpu=x86-64-v2 -C target-feature=+avx2"
 # Compile CLI
 cargo build --bin howrs --release --features openvino
 
-# Compile PAM module
-cargo build --lib --release --features openvino
-
 %install
 # Install binary
 install -D -m 755 target/release/howrs %{buildroot}%{_sbindir}/howrs
 
-# Install PAM module
-install -D -m 755 target/release/libhowrs.so %{buildroot}/%{_lib}/security/libhowrs.so
+# Install PAM module (symlink to binary for dlopen)
+mkdir -p %{buildroot}/%{_lib}/security
+ln -sf %{_sbindir}/howrs %{buildroot}/%{_lib}/security/pam_howrs.so
 
 # Install default configuration
 install -D -m 644 packaging/config.toml %{buildroot}/usr/local/etc/howrs/config.toml
@@ -77,7 +75,6 @@ if [ $1 -eq 1 ] ; then
     if [ -f %{_datadir}/selinux/packages/%{name}/howrs_pam.pp ]; then
         if command -v semodule > /dev/null 2>&1 && selinuxenabled 2>/dev/null; then
             semodule -i %{_datadir}/selinux/packages/%{name}/howrs_pam.pp 2>/dev/null || :
-            restorecon -R %{_lib}/security/libhowrs.so 2>/dev/null || :
             restorecon -R %{_sbindir}/howrs 2>/dev/null || :
             restorecon -R /usr/local/etc/howrs 2>/dev/null || :
         fi
@@ -105,7 +102,7 @@ fi
 %license LICENSE
 %doc README.md
 %{_sbindir}/howrs
-/%{_lib}/security/libhowrs.so
+/%{_lib}/security/pam_howrs.so
 %dir /usr/local/etc/howrs
 %config(noreplace) /usr/local/etc/howrs/config.toml
 %dir %{_datadir}/selinux/packages/%{name}

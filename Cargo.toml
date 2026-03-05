@@ -46,9 +46,6 @@ name = "howrs"
 version.workspace = true
 edition.workspace = true
 
-[lib]
-crate-type = ["lib", "cdylib"]
-
 [[bin]]
 name = "howrs"
 path = "src/main.rs"

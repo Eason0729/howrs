@@ -79,5 +79,8 @@ allow howrs_pam_t self:capability { dac_override dac_read_search setuid setgid }
 libs_use_ld_so(howrs_pam_t)
 libs_use_shared_libs(howrs_pam_t)
 
+# Allow the binary to be dlopen'd as a PAM module by any domain
+allow domain howrs_pam_exec_t:file { getattr open read map execute };
+
 # Allow miscellaneous files
 miscfiles_read_localization(howrs_pam_t)

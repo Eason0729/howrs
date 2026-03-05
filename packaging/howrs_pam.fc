@@ -1,7 +1,7 @@
 # File contexts for howrs PAM module
 
-# PAM module library
-/lib.*/security/libhowrs\.so    --  gen_context(system_u:object_r:lib_t,s0)
+# PAM module (symlink to binary)
+/lib.*/security/pam_howrs\.so   -l  gen_context(system_u:object_r:lib_t,s0)
 
 # Main binary
 /usr/sbin/howrs                 --  gen_context(system_u:object_r:howrs_pam_exec_t,s0)

@@ -7,170 +7,41 @@
 - **Secure**: Uses state-of-the-art YuNet face detection and SFace recognition models
 - **PAM Integration**: Drop-in replacement for password authentication
 - **Hardware Acceleration**: Supports multiple device(onnx), including NPU/GPU/CPU
-- **Blazing Fast**: Optimized with SIMD instructions for post-processing
 
-## Architecture
+## Get Started
 
-Howrs consists of two main components:
+- Fedora: Install `howrs` from copr(https://copr.fedorainfracloud.org/coprs/eason0729/howrs/)
+- Binary: Download from release.
+The binary is single ELF, which is both a CLI(for face enrollment) and a cdylib(for PAM).
 
-- **howrs** - Main binary and PAM module for authentication
-- **howrs-vision** - Face detection and recognition library with ONNX Runtime backend
-
-The system uses:
-- **YuNet** for fast and accurate face detection
-- **SFace** for generating discriminative face embeddings
-- **SIMD optimizations** for dot product calculations and image processing
-- **Postcard** for compact, version-stable binary serialization
-
-## Requirements
-
-### System Dependencies
-
-- Rust nightly toolchain (automatically configured via `rust-toolchain.toml`)
-- V4L2 compatible camera
-- ONNX Runtime (automatically downloaded during build)
-
-### Optional Hardware Acceleration
-
-The following execution providers can be enabled via Cargo features:
-- `cuda` - NVIDIA GPU acceleration
-- `openvino` - Intel CPU/GPU optimization (default)
-- `coreml` - Apple Silicon acceleration
-- `tensorrt` - NVIDIA TensorRT
-- `directml` - DirectX Machine Learning
-- And many more (see `Cargo.toml` for full list)
-
-## Compilation
-
-### Download Models
-
-Before building, you must download the ONNX models:
-
-```bash
-bash howrs-vision/models/download_models.sh
-```
-
-This downloads:
-- `face_detection_yunet_2023mar.onnx` - YuNet face detector
-- `face_recognition_sface_2021dec.onnx` - SFace recognition model
-
-### Standard Build
-
-> [!IMPORTANT]
-> On x86_64 architecture, you must set RUSTFLAGS for SIMD optimization:
-> ```bash
-> export RUSTFLAGS="-C target-cpu=x86-64-v2 -C target-feature=+avx2"
-> ```
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd howrs
-
-# Download models first
-bash howrs-vision/models/download_models.sh
-
-# Build CLI binary
-cargo build --bin howrs --release
-
-# Build PAM library (cdylib)
-cargo build --lib --release
-
-# The binaries will be in target/release/
-```
-
-### Build with Specific Execution Provider
+It store data in following location:
+- config file: `/usr/local/etc/howrs/config.toml`
+- face embeddings: `/usr/local/etc/howrs`
 
 > [!TIP]
-> All builds will fallback to CPU if runtime library isn't installed
-
-```bash
-# For NVIDIA GPU acceleration
-cargo build --bin howrs --release --features cuda
-cargo build --lib --release --features cuda
-
-# For Intel OpenVINO (default)
-cargo build --bin howrs --release --features openvino
-cargo build --lib --release --features openvino
-```
-
-### Build Environment Variables
-
-- `HOWRS_CONFIG_PATH` - Path to config file (default: `/usr/local/etc/howrs/config.toml`)
-- `HOWRS_FACE_STORE_PREFIX` - Path for face data storage (default: `/usr/local/etc/howrs`)
-
-These are embedded at compile time via `option_env!`:
-
-```bash
-HOWRS_CONFIG_PATH=/etc/howrs/config.toml HOWRS_FACE_STORE_PREFIX=/etc/howrs cargo build --bin howrs --release
-```
-
-## Installation
-
-```bash
-# Build the project (see Compilation section)
-# Make sure to build both the binary and library:
-#   cargo build --bin howrs --release
-#   cargo build --lib --release
-
-# Install the binary
-sudo install -m 755 target/release/howrs /usr/local/bin/
-
-# Install the PAM module
-sudo install -m 644 target/release/libhowrs.so /usr/local/lib/security/pam_howrs.so
-
-# Create configuration directory
-sudo mkdir -p /usr/local/etc/howrs
-
-# Create default configuration
-cat <<EOF | sudo tee /usr/local/etc/howrs/config.toml
-threshold = 0.6
-camera = "/dev/video0"
-scan_durnation = 5
-EOF
-```
+> They are readonly for normal user, so enrollment require root
 
 ## Usage
 
-### Enroll Your Face
+```
+howrs --help
+Rust howdy clone - facial recognition authentication
 
-```bash
-# Enroll current user
-howrs enroll
+Usage: howrs <COMMAND>
 
-# Enroll specific user (requires sudo)
-sudo howrs enroll --user username
+Commands:
+  enroll  Enroll face from camera
+  test    Test authentication by matching against enrolled faces
+  purge   Remove all enrolled faces for a user
+  config  Open config file in editor
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
 ```
 
-The enrollment process will:
-1. Open the configured camera
-2. Capture up to 30 frames
-3. Detect and select the best quality face
-4. Store the face embedding in `/usr/local/etc/howrs/<username>/faces.bin`
-
-### Test Authentication
-
-```bash
-# Test authentication for current user
-howrs test
-
-# Test for specific user
-sudo howrs test --user username
-```
-
-### Remove Enrolled Faces
-
-```bash
-# Remove all faces for current user
-howrs purge
-
-# Remove for specific user
-sudo howrs purge --user username
-```
-
-## PAM Configuration
-
-### Basic Setup
+### PAM Configuration
 
 To enable facial recognition authentication, edit your PAM configuration files.
 
@@ -194,9 +65,7 @@ auth sufficient pam_howrs.so
 auth required pam_unix.so
 ```
 
-## Configuration
-
-### Main Configuration File
+### Configuration
 
 Located at `/usr/local/etc/howrs/config.toml`, can be open with `howrs config`:
 
@@ -213,38 +82,76 @@ camera = "/dev/video0"
 scan_durnation = 5
 ```
 
-## Troubleshooting
+### Troubleshooting
 
-### Choosing Camera
+1. Choosing Camera
 
 ```bash
 # Test the camera
 ffplay /dev/video0
 ```
 
-### Low Recognition Accuracy
+2. SELinux
 
-- Ensure good lighting conditions
-- Position face directly facing camera
-- Adjust `threshold` value in config (lower = more lenient)
-- Enroll multiple times from different angles
+We have SELinux policy at `packaging`, rpm package should have that handled.
 
-### PAM Module Not Working
+## Build from source
+
+### System Dependencies
+
+- Rust nightly toolchain (automatically configured via `rust-toolchain.toml`)
+- V4L2 compatible camera
+- ONNX Runtime (automatically downloaded during build)
+
+### Steps
+
+1. Download Models
+
+Before building, you must download the ONNX models:
 
 ```bash
-# Check PAM module is installed
-ls -l /usr/local/lib/security/pam_howrs.so
-
-# Check PAM configuration syntax
-sudo pam-auth-update --force
-
-# View PAM logs
-sudo journalctl -xe | grep pam_howrs
+bash howrs-vision/models/download_models.sh
 ```
 
-### Illegal Instruction
+This downloads:
+- `face_detection_yunet_2023mar.onnx` - YuNet face detector
+- `face_recognition_sface_2021dec.onnx` - SFace recognition model
 
-The distributed package target x86 feature level v2 and AVX2, so you might need to build your own package.
+2. compile the binary
+
+> [!IMPORTANT]
+> On x86_64, we recommend following `RUSTFLAGS`:
+> ```bash
+> export RUSTFLAGS="-C target-cpu=x86-64-v2 -C target-feature=+avx2"
+> ```
+
+```bash
+cargo build --bin howrs --release
+```
+
+### Build with Specific Execution Provider
+
+> [!TIP]
+> All builds will fallback to CPU if runtime library isn't installed
+
+```bash
+# For NVIDIA GPU acceleration
+cargo build --bin howrs --release --features cuda
+
+# For Intel OpenVINO (default)
+cargo build --bin howrs --release --features openvino
+```
+
+### Optional Build Environment Variables
+
+- `HOWRS_CONFIG_PATH` - Path to config file (default: `/usr/local/etc/howrs/config.toml`)
+- `HOWRS_FACE_STORE_PREFIX` - Path for face data storage (default: `/usr/local/etc/howrs`)
+
+These are embedded at compile time via `option_env!`:
+
+```bash
+HOWRS_CONFIG_PATH=/etc/howrs/config.toml HOWRS_FACE_STORE_PREFIX=/etc/howrs cargo build --bin howrs --release
+```
 
 ## Security Considerations
 
