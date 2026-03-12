@@ -749,6 +749,7 @@ dependencies = [
  "howrs-vision",
  "image",
  "libc",
+ "libloading",
  "log",
  "ndarray",
  "once_cell",

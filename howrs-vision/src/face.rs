@@ -51,21 +51,21 @@ pub fn detect_faces(
     // SIMD-optimized RGB to BGR channel extraction with cache-friendly layout
     let pixel_count = (target_size * target_size) as usize;
     let mut input_data = Vec::with_capacity(3 * pixel_count);
-    
+
     // Pre-allocate all channels
     unsafe {
         input_data.set_len(3 * pixel_count);
     }
-    
+
     // Split into channel slices for better cache locality
     let (b_channel, rest) = input_data.split_at_mut(pixel_count);
     let (g_channel, r_channel) = rest.split_at_mut(pixel_count);
-    
+
     // Convert RGB to BGR using SIMD
     let pixels = img_rgb.as_raw();
     for i in 0..pixel_count {
         let idx = i * 3;
-        r_channel[i] = pixels[idx] as f32;     // R
+        r_channel[i] = pixels[idx] as f32; // R
         g_channel[i] = pixels[idx + 1] as f32; // G
         b_channel[i] = pixels[idx + 2] as f32; // B
     }
@@ -300,15 +300,21 @@ pub fn align_face(img: &DynamicImage, detection: &Detection, size: u32) -> Resul
                 let w10 = fx * (1.0 - fy);
                 let w01 = (1.0 - fx) * fy;
                 let w11 = fx * fy;
-                
+
                 // Compute interpolation for each RGB channel
                 // Using simple arithmetic allows LLVM to auto-vectorize
-                let r = (p00[0] as f32 * w00 + p10[0] as f32 * w10 
-                       + p01[0] as f32 * w01 + p11[0] as f32 * w11) as u8;
-                let g = (p00[1] as f32 * w00 + p10[1] as f32 * w10 
-                       + p01[1] as f32 * w01 + p11[1] as f32 * w11) as u8;
-                let b_val = (p00[2] as f32 * w00 + p10[2] as f32 * w10 
-                           + p01[2] as f32 * w01 + p11[2] as f32 * w11) as u8;
+                let r = (p00[0] as f32 * w00
+                    + p10[0] as f32 * w10
+                    + p01[0] as f32 * w01
+                    + p11[0] as f32 * w11) as u8;
+                let g = (p00[1] as f32 * w00
+                    + p10[1] as f32 * w10
+                    + p01[1] as f32 * w01
+                    + p11[1] as f32 * w11) as u8;
+                let b_val = (p00[2] as f32 * w00
+                    + p10[2] as f32 * w10
+                    + p01[2] as f32 * w01
+                    + p11[2] as f32 * w11) as u8;
 
                 output.put_pixel(out_x, out_y, image::Rgb([r, g, b_val]));
             }
@@ -330,21 +336,21 @@ pub fn encode_face(session: &mut Session, face_img: &DynamicImage) -> Result<Emb
     // SIMD-optimized RGB to BGR channel extraction with cache-friendly layout
     let pixel_count = (size * size) as usize;
     let mut input_data = Vec::with_capacity(3 * pixel_count);
-    
+
     // Pre-allocate all channels
     unsafe {
         input_data.set_len(3 * pixel_count);
     }
-    
+
     // Split into channel slices for better cache locality
     let (b_channel, rest) = input_data.split_at_mut(pixel_count);
     let (g_channel, r_channel) = rest.split_at_mut(pixel_count);
-    
+
     // Convert RGB to BGR
     let pixels = face_rgb.as_raw();
     for i in 0..pixel_count {
         let idx = i * 3;
-        r_channel[i] = pixels[idx] as f32;     // R
+        r_channel[i] = pixels[idx] as f32; // R
         g_channel[i] = pixels[idx + 1] as f32; // G
         b_channel[i] = pixels[idx + 2] as f32; // B
     }
@@ -384,17 +390,18 @@ pub fn match_embedding(a: &Embedding, b: &Embedding) -> f32 {
     // Embeddings are already L2-normalized, so dot product = cosine similarity
     let a_data = a.vector.as_slice().unwrap();
     let b_data = b.vector.as_slice().unwrap();
-    
+
     let len = a_data.len().min(b_data.len());
-    
+
     // Simple loop that LLVM can auto-vectorize
     // Using iterator zip and sum is optimal for auto-vectorization
-    let dot: f32 = a_data.iter()
+    let dot: f32 = a_data
+        .iter()
         .zip(b_data.iter())
         .take(len)
         .map(|(x, y)| x * y)
         .sum();
-    
+
     dot.max(-1.0).min(1.0)
 }
 

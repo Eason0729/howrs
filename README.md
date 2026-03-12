@@ -12,7 +12,10 @@
 
 - Fedora: Install `howrs` from copr(https://copr.fedorainfracloud.org/coprs/eason0729/howrs/)
 - Binary: Download from release.
-The binary is single ELF, which is both a CLI(for face enrollment) and a cdylib(for PAM).
+
+The build produces two files:
+- `howrs` - CLI for face enrollment and testing
+- `libhowrs.so` - PAM module (installed as `pam_howrs.so`)
 
 It store data in following location:
 - config file: `/usr/local/etc/howrs/config.toml`
@@ -126,7 +129,7 @@ This downloads:
 > ```
 
 ```bash
-cargo build --bin howrs --release
+cargo build --release
 ```
 
 ### Build with Specific Execution Provider
@@ -136,10 +139,10 @@ cargo build --bin howrs --release
 
 ```bash
 # For NVIDIA GPU acceleration
-cargo build --bin howrs --release --features cuda
+cargo build --release --features cuda
 
 # For Intel OpenVINO (default)
-cargo build --bin howrs --release --features openvino
+cargo build --release --features openvino
 ```
 
 ### Optional Build Environment Variables
@@ -150,7 +153,7 @@ cargo build --bin howrs --release --features openvino
 These are embedded at compile time via `option_env!`:
 
 ```bash
-HOWRS_CONFIG_PATH=/etc/howrs/config.toml HOWRS_FACE_STORE_PREFIX=/etc/howrs cargo build --bin howrs --release
+HOWRS_CONFIG_PATH=/etc/howrs/config.toml HOWRS_FACE_STORE_PREFIX=/etc/howrs cargo build --release
 ```
 
 ## Security Considerations

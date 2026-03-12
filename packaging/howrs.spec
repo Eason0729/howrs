@@ -4,7 +4,7 @@ Release:        1%{?dist}
 Summary:        High-performance facial recognition authentication system for Linux
 License:        Apache-2.0
 URL:            https://github.com/Eason0729/howrs/
-Source0:        https://github.com/Eason0729/howrs/
+Source0:        %{name}-%{version}.tar.gz
 %global debug_package %{nil}
 
 BuildRequires:  rust >= 1.70
@@ -47,16 +47,19 @@ fi
 export RUSTFLAGS="-C target-cpu=x86-64-v2 -C target-feature=+avx2"
 %endif
 
-# Compile CLI
-cargo build --bin howrs --release --features openvino
+# Compile CLI and library
+cargo build --release --features openvino
 
 %install
 # Install binary
 install -D -m 755 target/release/howrs %{buildroot}%{_sbindir}/howrs
 
-# Install PAM module (symlink to binary for dlopen)
+# Install shared library
+install -D -m 755 target/release/libhowrs.so %{buildroot}%{_libdir}/libhowrs.so
+
+# Install PAM module (symlink to library)
 mkdir -p %{buildroot}/%{_lib}/security
-ln -sf %{_sbindir}/howrs %{buildroot}/%{_lib}/security/pam_howrs.so
+ln -sf %{_libdir}/libhowrs.so %{buildroot}/%{_lib}/security/pam_howrs.so
 
 # Install default configuration
 install -D -m 644 packaging/config.toml %{buildroot}/usr/local/etc/howrs/config.toml
@@ -70,6 +73,9 @@ if [ -s packaging/howrs_pam.pp ]; then
 fi
 
 %post
+# Update library cache
+/sbin/ldconfig
+
 # Load SELinux policy module (if available)
 if [ $1 -eq 1 ] ; then
     if [ -f %{_datadir}/selinux/packages/%{name}/howrs_pam.pp ]; then
@@ -89,6 +95,11 @@ if [ -d /usr/local/etc/howrs ]; then
 fi
 
 %postun
+# Update library cache on removal
+if [ $1 -eq 0 ] ; then
+    /sbin/ldconfig
+fi
+
 # Remove SELinux policy module on uninstall (if it was installed)
 if [ $1 -eq 0 ] ; then
     if command -v semodule > /dev/null 2>&1 && selinuxenabled 2>/dev/null; then
@@ -102,6 +113,7 @@ fi
 %license LICENSE
 %doc README.md
 %{_sbindir}/howrs
+/%{_libdir}/libhowrs.so
 /%{_lib}/security/pam_howrs.so
 %dir /usr/local/etc/howrs
 %config(noreplace) /usr/local/etc/howrs/config.toml

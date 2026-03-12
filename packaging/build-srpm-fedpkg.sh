@@ -19,26 +19,26 @@ echo "Release: $RELEASE"
 echo ""
 
 # Check if fedpkg is installed
-if ! command -v fedpkg &> /dev/null; then
-    echo "Error: fedpkg not found. Please install it:"
-    echo "  sudo dnf install fedpkg"
-    exit 1
+if ! command -v fedpkg &>/dev/null; then
+	echo "Error: fedpkg not found. Please install it:"
+	echo "  sudo dnf install fedpkg"
+	exit 1
 fi
 
 # Build SELinux policy module first
 echo "Step 1: Downloading ONNX models..."
 cd "$PROJECT_ROOT/howrs-vision/models"
 if [ -f download_models.sh ]; then
-    bash download_models.sh
+	bash download_models.sh
 else
-    echo "Error: download_models.sh not found"
-    exit 1
+	echo "Error: download_models.sh not found"
+	exit 1
 fi
 
 # Verify models were downloaded
 if [ ! -f face_detection_yunet_2023mar.onnx ] || [ ! -f face_recognition_sface_2021dec.onnx ]; then
-    echo "Error: ONNX models not found after download"
-    exit 1
+	echo "Error: ONNX models not found after download"
+	exit 1
 fi
 
 echo "ONNX models downloaded successfully"
@@ -47,15 +47,15 @@ echo ""
 echo "Step 2: Building SELinux policy module..."
 cd "$SCRIPT_DIR"
 if [ -f build-selinux.sh ]; then
-    bash build-selinux.sh
+	bash build-selinux.sh
 else
-    echo "Warning: build-selinux.sh not found, skipping SELinux policy build"
+	echo "Warning: build-selinux.sh not found, skipping SELinux policy build"
 fi
 
 # Verify SELinux policy was built
 if [ ! -f "$SCRIPT_DIR/howrs_pam.pp" ]; then
-    echo "Warning: SELinux policy module (howrs_pam.pp) not found"
-    echo "The SRPM will be built without SELinux support"
+	echo "Warning: SELinux policy module (howrs_pam.pp) not found"
+	echo "The SRPM will be built without SELinux support"
 fi
 
 cd "$PROJECT_ROOT"
@@ -67,9 +67,11 @@ TARBALL_NAME="${PROJECT_NAME}-${VERSION}.tar.gz"
 FILE_LIST="$SCRIPT_DIR/tmp/filelist.txt"
 
 # use file list to exclude gitignored file, but include onnx model(so the srpm can be built offline)
-git ls-files > "$FILE_LIST"
-echo "howrs-vision/models/face_detection_yunet_2023mar.onnx" >> "$FILE_LIST"
-echo "howrs-vision/models/face_recognition_sface_2021dec.onnx" >> "$FILE_LIST"
+git ls-files >"$FILE_LIST"
+echo "src/lib.rs" >>"$FILE_LIST"
+echo "pam_dynamic_list.txt" >>"$FILE_LIST"
+echo "howrs-vision/models/face_detection_yunet_2023mar.onnx" >>"$FILE_LIST"
+echo "howrs-vision/models/face_recognition_sface_2021dec.onnx" >>"$FILE_LIST"
 
 # Create tarball
 cd "$PROJECT_ROOT"
@@ -95,7 +97,7 @@ sed -i "s|Source0:.*|Source0: ${TARBALL_NAME}|" howrs.spec
 cp "$PROJECT_ROOT/$TARBALL_NAME" .
 
 # Create sources file for fedpkg
-echo "SHA512 (${TARBALL_NAME}) = $(sha512sum ${TARBALL_NAME} | awk '{print $1}')" > sources
+echo "SHA512 (${TARBALL_NAME}) = $(sha512sum ${TARBALL_NAME} | awk '{print $1}')" >sources
 
 FEDORA_VERSION=$(grep "VERSION_ID" /etc/os-release | cut -d'=' -f2 | tr -d '"')
 
@@ -107,30 +109,30 @@ fedpkg --release "f$FEDORA_VERSION" srpm
 # Find and report the built SRPM
 SRPM_FILE=$(find . -name "*.src.rpm" | head -n 1)
 if [ -n "$SRPM_FILE" ]; then
-    # Copy SRPM to project root for easy access
-    cp "$SRPM_FILE" "$PROJECT_ROOT/"
-    SRPM_NAME=$(basename "$SRPM_FILE")
+	# Copy SRPM to project root for easy access
+	cp "$SRPM_FILE" "$PROJECT_ROOT/"
+	SRPM_NAME=$(basename "$SRPM_FILE")
 
-    echo ""
-    echo "=== Success! ==="
-    echo "Source RPM created: $PROJECT_ROOT/$SRPM_NAME"
-    echo ""
-    echo "To build the binary RPM from this SRPM:"
-    echo "  rpmbuild --rebuild $SRPM_NAME"
-    echo ""
-    echo "Or use mock for a clean build:"
-    echo "  mock -r fedora-$FEDORA_VERSION-x86_64 $SRPM_NAME"
-    echo ""
-    echo "The SRPM includes:"
-    echo "  - Source code"
-    echo "  - Spec file"
-    echo "  - ONNX models (for offline build)"
-    if [ -f "$SCRIPT_DIR/howrs_pam.pp" ]; then
-        echo "  - SELinux policy module (howrs_pam.pp)"
-    fi
+	echo ""
+	echo "=== Success! ==="
+	echo "Source RPM created: $PROJECT_ROOT/$SRPM_NAME"
+	echo ""
+	echo "To build the binary RPM from this SRPM:"
+	echo "  rpmbuild --rebuild $SRPM_NAME"
+	echo ""
+	echo "Or use mock for a clean build:"
+	echo "  mock --enable-network -r fedora-$FEDORA_VERSION-x86_64 $SRPM_NAME"
+	echo ""
+	echo "The SRPM includes:"
+	echo "  - Source code"
+	echo "  - Spec file"
+	echo "  - ONNX models (for offline build)"
+	if [ -f "$SCRIPT_DIR/howrs_pam.pp" ]; then
+		echo "  - SELinux policy module (howrs_pam.pp)"
+	fi
 else
-    echo "Error: Failed to find built SRPM"
-    exit 1
+	echo "Error: Failed to find built SRPM"
+	exit 1
 fi
 
 # Optional: Clean up fedpkg directory
