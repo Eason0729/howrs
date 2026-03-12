@@ -1102,7 +1102,7 @@
 
 
 
-#line 426427 "tmp/all_interfaces.conf"
+#line 426611 "tmp/all_interfaces.conf"
 
 #line 1 "howrs_pam.te"
 
@@ -10610,135 +10610,138 @@ allow howrs_pam_t self:capability { dac_override dac_read_search setuid setgid }
 #line 80
  	
 
+# Allow the binary to be dlopen'd as a PAM module by any domain
+allow domain howrs_pam_exec_t:file { getattr open read map execute };
+
 # Allow miscellaneous files
  	 	
-#line 83
+#line 86
 ##### begin miscfiles_read_localization(howrs_pam_t) depth: 1
-#line 83
+#line 86
  	
-#line 83
+#line 86
 	
-#line 83
+#line 86
 	
-#line 83
+#line 86
 		require {
-#line 83
+#line 86
 			
-#line 83
+#line 86
 		type locale_t;
-#line 83
+#line 86
 	
-#line 83
+#line 86
 		} # end require
-#line 83
+#line 86
 	
-#line 83
+#line 86
 
-#line 83
+#line 86
 
-#line 83
+#line 86
 	 	 	
-#line 83
+#line 86
 ##### begin files_read_etc_symlinks(howrs_pam_t) depth: 2
-#line 83
+#line 86
  	
-#line 83
+#line 86
 	
-#line 83
+#line 86
 	
-#line 83
+#line 86
 		require {
-#line 83
+#line 86
 			
-#line 83
+#line 86
 		type etc_t;
-#line 83
+#line 86
 	
-#line 83
+#line 86
 		} # end require
-#line 83
+#line 86
 	
-#line 83
+#line 86
 
-#line 83
+#line 86
 
-#line 83
+#line 86
 	
-#line 83
+#line 86
 	allow howrs_pam_t etc_t:dir { getattr search open };
-#line 83
+#line 86
 	allow howrs_pam_t etc_t:lnk_file { getattr read };
-#line 83
+#line 86
 
-#line 83
+#line 86
 
-#line 83
+#line 86
 	 	
-#line 83
+#line 86
 ##### end files_read_etc_symlinks(howrs_pam_t) depth: 1
-#line 83
+#line 86
  	
-#line 83
+#line 86
 	 	 	
-#line 83
+#line 86
 ##### begin files_search_usr(howrs_pam_t) depth: 2
-#line 83
+#line 86
  	
-#line 83
+#line 86
 	
-#line 83
+#line 86
 	
-#line 83
+#line 86
 		require {
-#line 83
+#line 86
 			
-#line 83
+#line 86
 		type usr_t;
-#line 83
+#line 86
 	
-#line 83
+#line 86
 		} # end require
-#line 83
+#line 86
 	
-#line 83
+#line 86
 
-#line 83
+#line 86
 
-#line 83
+#line 86
 	allow howrs_pam_t usr_t:dir { getattr search open };
-#line 83
+#line 86
 
-#line 83
+#line 86
 	 	
-#line 83
+#line 86
 ##### end files_search_usr(howrs_pam_t) depth: 1
-#line 83
+#line 86
  	
-#line 83
+#line 86
 	allow howrs_pam_t locale_t:dir { getattr search open read lock ioctl };
-#line 83
+#line 86
 	
-#line 83
+#line 86
 	allow howrs_pam_t locale_t:dir { getattr search open };
-#line 83
+#line 86
 	allow howrs_pam_t locale_t:file { open { getattr read ioctl lock } };
-#line 83
+#line 86
 
-#line 83
+#line 86
 	
-#line 83
+#line 86
 	allow howrs_pam_t locale_t:dir { getattr search open };
-#line 83
+#line 86
 	allow howrs_pam_t locale_t:lnk_file { getattr read };
-#line 83
+#line 86
 
-#line 83
+#line 86
 	allow howrs_pam_t locale_t:file map;
-#line 83
+#line 86
 
-#line 83
+#line 86
 	 	
-#line 83
+#line 86
 ##### end miscfiles_read_localization(howrs_pam_t) depth: 0
-#line 83
+#line 86
  	
