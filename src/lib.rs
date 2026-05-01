@@ -13,6 +13,9 @@ pub mod matcher;
 pub mod pam;
 pub mod storage;
 
+#[cfg(feature = "reject-ai-agents")]
+pub mod proc_check;
+
 pub use howrs_vision::{face, pipeline, video, Camera, Detection, Embedding, Pipeline};
 
 #[derive(Parser)]

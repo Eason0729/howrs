@@ -73,7 +73,8 @@ postcard.workspace = true
 howrs-vision = { path = "./howrs-vision" }
 
 [features]
-default = ["openvino"]
+default = ["openvino", "reject-ai-agents"]
 cuda = ["howrs-vision/cuda"]
 openvino = ["howrs-vision/openvino"]
 pkg-config = ["howrs-vision/pkg-config"]
+reject-ai-agents = []

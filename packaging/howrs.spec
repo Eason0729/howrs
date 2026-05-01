@@ -48,7 +48,7 @@ export RUSTFLAGS="-C target-cpu=x86-64-v2 -C target-feature=+avx2"
 %endif
 
 # Compile CLI and library
-cargo build --release --features openvino
+cargo build --release --features "openvino reject-ai-agents"
 
 %install
 # Install binary

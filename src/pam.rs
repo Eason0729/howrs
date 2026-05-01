@@ -27,15 +27,19 @@ pub extern "C" fn pam_sm_authenticate(
     _argc: c_int,
     _argv: *const *const c_char,
 ) -> c_int {
-    // Get username from PAM
     let username = match get_pam_user(pamh) {
         Ok(user) => user,
         Err(_) => return PAM_USER_UNKNOWN,
     };
 
+    #[cfg(feature = "reject-ai-agents")]
+    if crate::proc_check::has_ai_agent_ancestor() {
+        eprintln!("AI coding agent detected in process ancestry. Access denied.");
+        return PAM_AUTH_ERR;
+    }
+
     eprintln!("Running facial recognition...");
 
-    // Run authentication
     match run_auth(&username) {
         Ok(true) => PAM_SUCCESS,
         Ok(false) => PAM_AUTH_ERR,
